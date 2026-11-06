@@ -1,6 +1,6 @@
 {
   "name": "mcp-qzone-safe",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MCP server for QQ Zone (Qzone) with guardrails: read posts, like, comment (incl. nested replies), publish - all rate-limited and allowlisted.",
   "license": "MIT",
   "author": "HOHOLI",
@@ -19,7 +19,8 @@
   },
   "scripts": {
     "start": "node src/index.js",
-    "test": "node --test"
+    "test": "node --test",
+    "selftest:mcp": "node scripts/selftest-mcp.mjs"
   },
   "keywords": [
     "mcp",
