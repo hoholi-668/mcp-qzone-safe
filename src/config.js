@@ -56,7 +56,16 @@ export function resolveConfig(env = process.env, fileCfg = {}) {
     auditPath: path.join(stateDir, 'audit.jsonl'),
     ratePath: path.join(stateDir, 'rate.json'),
     // 可选：外部系统的状态目录（例如 qq-bridge 的 state/）。不配则相关同步全部跳过。
-    bridgeStateDir: env.QZONE_BRIDGE_STATE_DIR || fileCfg.bridgeStateDir || ''
+    bridgeStateDir: env.QZONE_BRIDGE_STATE_DIR || fileCfg.bridgeStateDir || '',
+    // 「发完说说顺便逛逛朋友空间」：默认开启，搭在已有的回合里，不产生额外唤醒。
+    patrol: {
+      enabled: fileCfg.patrol?.enabled !== false,
+      onPublish: fileCfg.patrol?.onPublish !== false,
+      maxFriends: Math.max(1, Number(fileCfg.patrol?.maxFriends ?? 3)),
+      perFriend: Math.max(1, Number(fileCfg.patrol?.perFriend ?? 2)),
+      selfUin: String(env.QZONE_SELF_UIN || fileCfg.selfUin || ''),
+      excludeUins: (Array.isArray(fileCfg.patrol?.excludeUins) ? fileCfg.patrol.excludeUins : []).map(String)
+    }
   };
 }
 
@@ -64,3 +73,4 @@ export function loadConfig(env = process.env) {
   const fileCfg = readJson(defaultConfigPath(env), {});
   return resolveConfig(env, fileCfg);
 }
+

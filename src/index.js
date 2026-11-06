@@ -24,6 +24,7 @@ import { z } from 'zod';
 import { loadConfig } from './config.js';
 import { pruneState, checkRate, recordRate } from './guard.js';
 import { summarizePosts, summarizeComments, validateText } from './format.js';
+import { pickPatrolTargets, pickNewPosts, mergeSeen, formatPatrolDigest } from './patrol.js';
 
 const cfg = loadConfig();
 
@@ -105,6 +106,59 @@ function record(kind, dedupeKey) {
   saveRate(recordRate(loadRate(), kind, dedupeKey));
 }
 
+// ── 「发完说说顺便逛逛朋友空间」 ─────────────────────────────────────────
+// 触发点：她成功发出一条说说后（她本来就醒着），顺便看看好友有没有新动态。
+// 好处：不需要额外定时器，也不产生额外唤醒；她当场就能点赞/评论/只是看看。
+const PATROL_PATH = path.join(cfg.stateDir, 'qzone-patrol.json');
+
+/** 好友名字（如果宿主配了 friends.json，就用她写过的备注） */
+function friendName(uin) {
+  if (!bridgeState) return '';
+  const friends = readJson(bridgeState.friends, {});
+  return friends?.[uin]?.name || '';
+}
+
+/**
+ * 巡视一轮：挑几个人、拉最近说说、挑没见过的、存状态。
+ * 只读，不会点赞或评论；要不要互动由她自己决定。
+ */
+async function runPatrol() {
+  if (!cfg.patrol?.enabled) return '';
+  const state = readJson(PATROL_PATH, { seen: [], index: 0 });
+  const exclude = new Set([cfg.patrol.selfUin, ...(cfg.patrol.excludeUins || [])].filter(Boolean).map(String));
+  const pool = [...cfg.allowUins].filter((u) => !exclude.has(String(u)));
+  if (!pool.length) return '';
+
+  const { targets, nextIndex } = pickPatrolTargets(pool, Number(state.index) || 0, cfg.patrol.maxFriends);
+  const results = [];
+  const seenNew = [];
+  const fetched = [];
+
+  for (const uin of targets) {
+    try {
+      const body = await callOneBot('get_qzone_msg_list', { target_uin: Number(uin), pos: 0, num: 3 });
+      const posts = Array.isArray(body?.data?.msglist) ? body.data.msglist : [];
+      if (!posts.length) continue;
+      for (const p of posts) if (p?.tid) fetched.push(String(p.tid));
+      const fresh = pickNewPosts(posts, state.seen, cfg.patrol.perFriend);
+      if (fresh.length) {
+        results.push({ uin: String(uin), name: friendName(uin), posts: fresh });
+        for (const p of fresh) seenNew.push(p.tid);
+      }
+    } catch { /* 单个好友失败不影响其他 */ }
+  }
+
+  // 记下「看到过的」而不是「给她看过的」：好友的老说说下次不该再刷出来
+  savePatrol({ seen: mergeSeen(state.seen, [...fetched, ...seenNew]), index: nextIndex });
+  audit({ tool: 'patrol', targets: targets.length, fresh: seenNew.length });
+  return formatPatrolDigest(results);
+}
+
+function savePatrol(next) {
+  writeJson(PATROL_PATH, next);
+}
+
+
 // ── 可选联动：与宿主（如 qq-bridge）共用状态 ─────────────────────────────
 const bridgeState = cfg.bridgeStateDir ? {
   watch: path.join(cfg.bridgeStateDir, 'qzone-watch.json'),
@@ -170,12 +224,15 @@ server.tool(
   '读取某条说说下面的评论（只读）。tid 从 qzone_see_posts 拿；能翻页（pos/num）。返回每条评论的作者/时间/内容，以及楼中楼回复。',
   {
     tid: z.string().describe('说说 tid（qzone_see_posts 返回的）'),
+    target_uin: z.string().optional().describe('说说主人的 QQ 号（看别人的说说必填，否则桥接返回 -8「原文已被删除」）'),
     pos: z.number().int().min(0).optional().describe('评论起始偏移，默认 0'),
     num: z.number().int().min(1).max(50).optional().describe('取多少条，默认 20')
   },
-  async ({ tid, pos, num }) => {
+  async ({ tid, target_uin, pos, num }) => {
     try {
-      const body = await callOneBot('get_qzone_msg_detail', { tid, pos: pos ?? 0, num: num ?? 20 });
+      const params = { tid, pos: pos ?? 0, num: num ?? 20 };
+      if (target_uin) params.target_uin = Number(target_uin);
+      const body = await callOneBot('get_qzone_msg_detail', params);
       audit({ tool: 'comments', tid, ok: body?.status === 'ok' });
       if (body?.status !== 'ok') return text({ failed: true, retcode: body?.retcode, wording: body?.wording }, true);
       const out = summarizeComments(body, tid);
@@ -239,7 +296,7 @@ server.tool(
       const res = await callOneBot('comment_qzone', payload);
       audit({ tool: 'comment', target_uin, tid, chars: [...body].length, ok: res?.status === 'ok', retcode: res?.retcode });
       if (res?.status !== 'ok') return text({ failed: true, retcode: res?.retcode, wording: res?.wording }, true);
-      record('comment', `${tid}:${comment_uin || ''}`);
+      record('comment', String(tid));
       const newId = String(res?.data?.comment_id || res?.data?.commentid || '');
       if (target_uin) noteMyComment(target_uin, tid, newId);
       markReplied(tid, comment_uin, newId);
@@ -324,7 +381,11 @@ server.tool(
       audit({ tool: 'publish', chars: [...body].length, ok: res?.status === 'ok', retcode: res?.retcode });
       if (res?.status !== 'ok') return text({ failed: true, retcode: res?.retcode, wording: res?.wording }, true);
       record('publish');
-      return text({ ok: true, action: 'publish', content: body });
+      // 发完说说顺便逛逛朋友空间（只读；要不要互动由她自己决定）
+      const digest = cfg.patrol?.onPublish ? await runPatrol().catch(() => '') : '';
+      const payload = { ok: true, action: 'publish', content: body };
+      const base = JSON.stringify(payload, null, 2);
+      return { content: [{ type: 'text', text: digest ? `${base}\n${digest}` : base }] };
     } catch (error) {
       return text(`发表失败：${error?.message ?? error}`, true);
     }
@@ -332,6 +393,14 @@ server.tool(
 );
 
 await seedGroupUins();
+
+// 自检用：QZONE_PATROL_ON_START=1 时启动即跑一轮巡视（只读），方便验证真实环境
+if (String(process.env.QZONE_PATROL_ON_START || '') === '1') {
+  const digest = await runPatrol().catch((e) => `patrol 失败：${e?.message ?? e}`);
+  console.error(`[qzone-safe][patrol-on-start] ${digest || '(没有新动态)'}`);
+}
 audit({ tool: 'startup', allowUins: [...cfg.allowUins], publishEnabled: cfg.publishEnabled });
 console.error(`[qzone-safe] ready — allow=${cfg.allowUins.size} uins, publish=${cfg.publishEnabled}, endpoint=${cfg.onebot.baseUrl}`);
 await server.connect(new StdioServerTransport());
+
+
