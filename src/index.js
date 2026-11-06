@@ -164,7 +164,8 @@ const bridgeState = cfg.bridgeStateDir ? {
   watch: path.join(cfg.bridgeStateDir, 'qzone-watch.json'),
   pending: path.join(cfg.bridgeStateDir, 'qzone-pending-comment.json'),
   mine: path.join(cfg.bridgeStateDir, 'qzone-my-comments.json'),
-  friends: path.join(cfg.bridgeStateDir, 'friends.json')
+  friends: path.join(cfg.bridgeStateDir, 'friends.json'),
+  lastPublish: path.join(cfg.bridgeStateDir, 'qzone-last-publish.json')
 } : null;
 
 function markReplied(tid, commentUin, newCommentId) {
@@ -381,6 +382,10 @@ server.tool(
       audit({ tool: 'publish', chars: [...body].length, ok: res?.status === 'ok', retcode: res?.retcode });
       if (res?.status !== 'ok') return text({ failed: true, retcode: res?.retcode, wording: res?.wording }, true);
       record('publish');
+      // 宿主（如 qq-bridge）靠这个文件判断「今天发过没有」，别漏写
+      if (bridgeState) {
+        writeJson(bridgeState.lastPublish, { tid: String(res?.data?.tid || res?.data?.msgid || ''), at: Date.now() });
+      }
       // 发完说说顺便逛逛朋友空间（只读；要不要互动由她自己决定）
       const digest = cfg.patrol?.onPublish ? await runPatrol().catch(() => '') : '';
       const payload = { ok: true, action: 'publish', content: body };
@@ -402,5 +407,6 @@ if (String(process.env.QZONE_PATROL_ON_START || '') === '1') {
 audit({ tool: 'startup', allowUins: [...cfg.allowUins], publishEnabled: cfg.publishEnabled });
 console.error(`[qzone-safe] ready — allow=${cfg.allowUins.size} uins, publish=${cfg.publishEnabled}, endpoint=${cfg.onebot.baseUrl}`);
 await server.connect(new StdioServerTransport());
+
 
 
