@@ -133,6 +133,10 @@ npm test
 ## 许可
 
 MIT © 2026 HOHOLI
+## 遇到问题
+
+先看 [TROUBLESHOOTING.md](TROUBLESHOOTING.md)：报错码、限频、白名单、风控都在里面。
+
 ## 验证过的场景（真跑）
 
 | 层 | 命令 | 覆盖 | 结果 |
