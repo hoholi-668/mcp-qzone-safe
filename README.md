@@ -177,3 +177,46 @@ MIT © 2026 HOHOLI
 
 > 这三条都是「单元测试全绿但真实环境会坏」的典型：mock 不会模拟桥接对参数的要求，
 > 也发现不了「忘记写记录」这种逻辑遗漏。所以协议层测试必须连真实 OneBot。
+
+## 兼容范围
+
+| 项 | 要求 | 实测情况 |
+|---|---|---|
+| **操作系统** | Linux / Windows / macOS | 代码无平台依赖；仅在 Linux 实测 |
+| **Node.js** | `>= 20` | 20 / 22 / 24 跑过单测；CI 覆盖 20、22 |
+| **OneBot 网关** | **必须是 SnowLuma 系** | ✅ 实测 SnowLuma |
+
+### OneBot 兼容性（重要）
+
+QQ 空间的接口**不在 OneBot v11 标准里**。本插件用到 7 个 action：
+
+| action | 标准？ |
+|---|---|
+| `get_login_info` | ✅ 标准 |
+| `get_group_member_list` | ✅ 标准 |
+| `get_qzone_msg_list` | ❌ 非标准 |
+| `get_qzone_msg_detail` | ❌ 非标准 |
+| `like_qzone` | ❌ 非标准 |
+| `comment_qzone` | ❌ 非标准 |
+| `send_qzone_msg` | ❌ 非标准 |
+
+| 网关 | 能用吗 |
+|---|---|
+| **SnowLuma** | ✅ 实测可用 |
+| NapCat / Lagrange / go-cqhttp | ❌ 大概率不行（没有空间 action） |
+| 其它 SnowLuma 分支 | 🟡 看是否保留同名 action |
+
+### AI 客户端
+
+| 客户端 | 状态 |
+|---|---|
+| DSH 0.1.x / 0.2.x | ✅ 实测 |
+| 其它 MCP 客户端 | 🟡 推断可用（只返回文本，不涉及图片） |
+
+### 自测你的环境
+
+```bash
+node --test                                    # 单测（12 项）
+QZONE_ONEBOT_URL=... QZONE_ONEBOT_TOKEN=... \
+QZONE_TEST_UIN=你的号 node scripts/selftest-mcp.mjs   # 协议层（只读）
+```
