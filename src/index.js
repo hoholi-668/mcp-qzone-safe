@@ -336,7 +336,7 @@ server.tool(
 
 server.tool(
   'friend_note',
-  '给一个好友写下你的定义（名字/关系/该怎么跟他说话/备注）。传了哪项就更新哪项，notes 会追加。',
+  '给一个好友写下你的定义（名字/关系/该怎么跟他说话/备注）。用户说「记住这个人」「他是谁」「该怎么跟他说话」时用。传了哪项就更新哪项，notes 会追加。',
   {
     uin: z.string().describe('好友 QQ 号'),
     name: z.string().optional().describe('你对他/她的称呼'),
