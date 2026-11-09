@@ -28,13 +28,18 @@
 
 **发说说默认关闭**，必须显式 `publishEnabled: true` 才能用。
 
-## 安装
+## 安装（从 GitHub）
+
+> **本项目没有发布到 npm。** 别用 `npm install -g mcp-qzone-safe`（会 404）。
 
 ```bash
-npm install -g mcp-qzone-safe
+git clone https://github.com/hoholi-668/mcp-qzone-safe.git
+cd mcp-qzone-safe
+npm install
+node src/index.js      # 出现 ready 就说明能启动
 ```
 
-需要有一个兼容 OneBot v11 的网关（例如 SnowLuma）在跑。
+需要有一个 **SnowLuma 系** OneBot 网关在跑（见下方「兼容范围」——NapCat 等没有 QQ 空间接口）。
 
 ## 配置
 
@@ -76,13 +81,25 @@ npm install -g mcp-qzone-safe
 
 ```yaml
 - id: mcp-qzone-safe
-  name: '@deepseek-ai/dsh-mcp'
+  name: '@deepseek-ai/dsh-mcp-client'
   config:
-    command: npx
-    args: ['-y', 'mcp-qzone-safe']
+    serverName: qzone-safe
+    transport: stdio
+    command: node
+    args: ['/绝对路径/mcp-qzone-safe/src/index.js']
     env:
       QZONE_ONEBOT_URL: http://127.0.0.1:3000
       QZONE_ONEBOT_TOKEN: ${SNOWLUMA_TOKEN}
+      QZONE_CONFIG: /path/to/qzone-mcp.json
+```
+
+### 第一次用怎么开口
+
+```
+你认识哪些人？都叫什么
+朋友们最近都发什么了
+我空间有人评论我吗
+给主人最新那条说说点个赞
 ```
 
 ## 关于楼中楼回复
