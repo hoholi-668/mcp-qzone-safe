@@ -208,14 +208,17 @@ const server = new McpServer({ name: 'qzone-safe', version: '0.1.0' });
 
 server.tool(
   'qzone_see_posts',
-  '查看某个 QQ 号的最新说说（只读）。用户说「朋友们最近发了什么」「看看某人空间」时用；不知道有哪些号就先调 friend_list。返回 tid（评论/点赞要用）、正文摘要、图片数、评论数、总条数。target_uin 必须在白名单内。',
-  { target_uin: z.string().describe('要查看的 QQ 号'), num: z.number().int().min(1).max(5).optional().describe('取几条，默认 3') },
+  '查看某个 QQ 号的最新说说（只读）。用户说「朋友们最近发了什么」「看看某人空间」时用；不知道有哪些号就先调 friend_list。**不传 target_uin = 看你自己的空间**（用户说「我空间」「我的说说」时就别传）。返回 tid（评论/点赞要用）、正文摘要、图片数、评论数、总条数。target_uin 必须在白名单内，自己例外。',
+  { target_uin: z.string().optional().describe('要查看的 QQ 号；不传就是你自己（看自己空间）'), num: z.number().int().min(1).max(5).optional().describe('取几条，默认 3') },
   async ({ target_uin, num }) => {
-    const deny = await ensureAllowed(target_uin);
+    // 不传 target_uin = 看自己的空间（用户说“我空间/我的说说”时最常见）
+    const owner = String(target_uin || selfUin || '');
+    if (!owner) return text('需要 target_uin：说说主人的 QQ 号。看自己的空间可以不传，但本服务还没拿到你的号。', true);
+    const deny = await ensureAllowed(owner);
     if (deny) return text(deny, true);
     try {
-      const body = await callOneBot('get_qzone_msg_list', { target_uin: Number(target_uin), pos: 0, num: num ?? 3 });
-      audit({ tool: 'see_posts', target_uin, ok: body?.status === 'ok' });
+      const body = await callOneBot('get_qzone_msg_list', { target_uin: Number(owner), pos: 0, num: num ?? 3 });
+      audit({ tool: 'see_posts', target_uin: owner, ok: body?.status === 'ok' });
       if (body?.status !== 'ok') return text({ failed: true, retcode: body?.retcode, wording: body?.wording }, true);
       return text(summarizePosts(body));
     } catch (error) {
