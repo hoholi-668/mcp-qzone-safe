@@ -74,7 +74,8 @@ try {
   console.log('\n[3] 读评论');
   const tid = process.env.QZONE_TEST_TID || firstTid;
   if (tid) {
-    const cm = await client.callTool({ name: 'qzone_comments', arguments: { tid, num: 10 } });
+    // 这条说说属于 testUin；不传 target_uin 会按'看自己'处理，所以这里显式传
+      const cm = await client.callTool({ name: 'qzone_comments', arguments: { tid, target_uin: testUin, num: 10 } });
     const cmText = textOf(cm);
     ok('读评论不报错', !cm.isError, cmText.slice(0, 70).replace(/\n/g, ' '));
   } else {

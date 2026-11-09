@@ -219,7 +219,12 @@ server.tool(
     try {
       const body = await callOneBot('get_qzone_msg_list', { target_uin: Number(owner), pos: 0, num: num ?? 3 });
       audit({ tool: 'see_posts', target_uin: owner, ok: body?.status === 'ok' });
-      if (body?.status !== 'ok') return text({ failed: true, retcode: body?.retcode, wording: body?.wording }, true);
+      if (body?.status !== 'ok') {
+        const hint = target_uin
+          ? ''
+          : '（没传 target_uin 时默认按「你自己的说说」去读；如果这条是别人的，请补上 target_uin=说说主人的 QQ 号）';
+        return text({ failed: true, retcode: body?.retcode, wording: body?.wording, hint }, true);
+      }
       return text(summarizePosts(body));
     } catch (error) {
       return text(`读取失败：${error?.message ?? error}`, true);
