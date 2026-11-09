@@ -9,12 +9,24 @@
 
 | 工具 | 作用 | 写操作 |
 |---|---|---|
-| `qzone_see_posts` | 看某个 QQ 号的最新说说 | ❌ |
+| `qzone_see_posts` | 看某个 QQ 号的最新说说；**不传 target_uin = 看自己的** | ❌ |
 | `qzone_comments` | 读某条说说的评论（含楼中楼） | ❌ |
 | `qzone_like` | 点赞 | ✅ 限频 + 去重 |
 | `qzone_comment` | 评论 / 回复某条评论 | ✅ 限频 + 去重 + 字数 |
 | `qzone_publish` | 发说说 | ✅ **默认关闭** |
 | `friend_list` / `friend_note` | 好友名册（她给每个人写的定义） | ✅ 本地文件 |
+
+## 看自己的空间
+
+`qzone_see_posts` 的 `target_uin` 是**可选**的：
+
+```
+qzone_see_posts()                    # 看自己（用户说「我空间」「我的说说」时这么用）
+qzone_see_posts({ target_uin: "123" })  # 看别人
+```
+
+「自己」是谁：优先读配置的 `selfUin`，没配就在启动时用 `get_login_info` 自动识别。
+**自己永远允许操作**，不需要把自己的号加进 `allowUins`。
 
 ## 五道闸门
 
