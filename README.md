@@ -28,6 +28,18 @@ qzone_see_posts({ target_uin: "123" })  # 看别人
 「自己」是谁：优先读配置的 `selfUin`，没配就在启动时用 `get_login_info` 自动识别。
 **自己永远允许操作**，不需要把自己的号加进 `allowUins`。
 
+## 好友定义字段
+
+`friend_note` 可以传这些字段（传哪项就更新哪项）：
+
+| 字段 | 说明 |
+|---|---|
+| `uin` | 好友 QQ 号（必填） |
+| `name` | 你对他/她的称呼 |
+| `relation` | 关系（同事/朋友/家人…） |
+| `tone` | 该怎么跟他说话（语气、分寸） |
+| `note` | 备注，追加不覆盖 |
+
 ## 五道闸门
 
 | 闸门 | 默认值 | 说明 |
@@ -86,6 +98,8 @@ node src/index.js      # 出现 ready 就说明能启动
 | `QZONE_STATE_DIR` | 状态目录（审计/限频），默认 `~/.local/share/qzone-safe` |
 | `QZONE_PUBLISH_ENABLED` | `true` 时打开发说说 |
 | `QZONE_BRIDGE_STATE_DIR` | 可选：与宿主（如 qq-bridge）共用状态目录 |
+| `QZONE_SELF_UIN` | 你自己的 QQ 号；不设则在启动时用 `get_login_info` 自动识别 |
+| `QZONE_PATROL_ON_START` | 设 `1` 时启动即跑一轮只读巡视，便于验证真实环境 |
 
 ## 接到 MCP 客户端
 
@@ -115,6 +129,15 @@ node src/index.js      # 出现 ready 就说明能启动
 ```
 
 ## 关于楼中楼回复
+
+`qzone_comment` 除 `target_uin / tid / content` 外，还有两个**楼中楼专用**参数：
+
+| 参数 | 说明 |
+|---|---|
+| `comment_id` | 要回复的那条评论 id（从 `qzone_comments` 拿） |
+| `comment_uin` | 那条评论的作者 QQ 号 |
+| `reply_name` / `reply_uin` | 可选：回复时的称呼与对象（部分网关需要，正常留空即可） |
+
 
 QQ 空间的回复是**二级评论**，`get_qzone_msg_detail` 只把一级评论列在 `comments` 里，
 回复藏在每条的 `replies` 下——**只看 `comment_num` 会以为“没回”**。
