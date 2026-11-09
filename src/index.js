@@ -204,7 +204,7 @@ const server = new McpServer({ name: 'qzone-safe', version: '0.1.0' });
 
 server.tool(
   'qzone_see_posts',
-  '查看某个 QQ 号的最新说说（只读）。返回 tid（评论/点赞要用）、正文摘要、图片数、评论数、总条数。target_uin 必须在白名单内。',
+  '查看某个 QQ 号的最新说说（只读）。用户说「朋友们最近发了什么」「看看某人空间」时用；不知道有哪些号就先调 friend_list。返回 tid（评论/点赞要用）、正文摘要、图片数、评论数、总条数。target_uin 必须在白名单内。',
   { target_uin: z.string().describe('要查看的 QQ 号'), num: z.number().int().min(1).max(5).optional().describe('取几条，默认 3') },
   async ({ target_uin, num }) => {
     const deny = await ensureAllowed(target_uin);
@@ -222,7 +222,7 @@ server.tool(
 
 server.tool(
   'qzone_comments',
-  '读取某条说说下面的评论（只读）。tid 从 qzone_see_posts 拿；能翻页（pos/num）。返回每条评论的作者/时间/内容，以及楼中楼回复。',
+  '读取某条说说下面的评论（只读）。用户问「有人评论我吗」「这条下面说了什么」时用；看自己的说说要先 qzone_see_posts 拿自己最新说说的 tid。能翻页（pos/num），返回每条评论的作者/时间/内容，以及楼中楼回复。',
   {
     tid: z.string().describe('说说 tid（qzone_see_posts 返回的）'),
     target_uin: z.string().optional().describe('说说主人的 QQ 号（看别人的说说必填，否则桥接返回 -8「原文已被删除」）'),
@@ -247,7 +247,7 @@ server.tool(
 
 server.tool(
   'qzone_like',
-  '给某条说说点赞。需要 target_uin + tid（先 qzone_see_posts 拿）。同一条 24h 内只能赞一次，有频率上限。',
+  '给某条说说点赞。用户说「给这条点个赞」时用。需要 target_uin + tid（先 qzone_see_posts 拿）。同一条 24h 内只能赞一次，有频率上限。',
   { target_uin: z.string(), tid: z.string().describe('说说 tid') },
   async ({ target_uin, tid }) => {
     const deny = await ensureAllowed(target_uin);
@@ -268,7 +268,7 @@ server.tool(
 
 server.tool(
   'qzone_comment',
-  '评论某条说说，或回复某条评论（楼中楼）。需要 target_uin + tid + content。要回复评论时，额外传 comment_id + comment_uin（从 qzone_comments 拿）。≤120 字，禁止 CQ 码。同一条 24h 内只能评一次，每小时最多 3 条、每天最多 10 条。',
+  '评论某条说说，或回复某条评论（楼中楼）。用户说「回他一句」「评论一下」时用。需要 target_uin + tid + content。要回复评论时，额外传 comment_id + comment_uin（从 qzone_comments 拿）。≤120 字，禁止 CQ 码。同一条 24h 内只能评一次，每小时最多 3 条、每天最多 10 条。',
   {
     target_uin: z.string().optional().describe('说说归属的 QQ 号；评论自己的说说可以不传'),
     tid: z.string().describe('说说 tid'),
@@ -319,7 +319,7 @@ function writeFriends(obj) {
 
 server.tool(
   'friend_list',
-  '查看好友名册（谁写过定义、谁还没写）。返回每个好友的 uin / 名字 / 关系 / 语气 / 备注。',
+  '查看好友名册（谁写过定义、谁还没写）。用户问「你认识谁」「都有哪些朋友」时用；也是 qzone_see_posts 的上一步——先拿到号，再去看说说。返回每个好友的 uin / 名字 / 关系 / 语气 / 备注。',
   {},
   async () => {
     const friends = readFriends();
@@ -365,11 +365,11 @@ server.tool(
 server.tool(
   'qzone_publish',
   cfg.publishEnabled
-    ? '发表一条说说（文字 ≤300 字，可选图片 URL 列表）。每天最多 1 条。'
+    ? '发表一条说说（文字 ≤300 字，可选图片 URL 列表）。用户说「发条说说」「发个动态」时用。每天最多 1 条。'
     : '【当前禁用】发表说说需要管理员在配置文件里设置 publishEnabled: true 并重启本服务。',
   { content: z.string(), images: z.array(z.string()).max(9).optional() },
   async ({ content, images }) => {
-    if (!cfg.publishEnabled) return text('拒绝：发说说功能未启用（配置 publishEnabled=false）', true);
+    if (!cfg.publishEnabled) return text('拒绝：发说说功能未启用。开启方法：在配置文件（qzone-mcp.json）里设置 "publishEnabled": true 后重启本服务；或设环境变量 QZONE_PUBLISH_ENABLED=true。', true);
     const body = String(content ?? '').trim();
     const invalid = validateText(body, cfg.maxPublishChars);
     if (invalid) return text(invalid, true);
