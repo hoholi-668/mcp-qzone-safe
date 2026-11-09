@@ -46,6 +46,8 @@ export function resolveConfig(env = process.env, fileCfg = {}) {
       token: String(env.QZONE_ONEBOT_TOKEN || fileCfg.onebot?.token || '')
     },
     allowUins,
+    // 她自己：永远允许操作（读+写自己的空间），不必进 allowUins
+    selfUin: String(env.QZONE_SELF_UIN || fileCfg.selfUin || fileCfg.patrol?.selfUin || ''),
     groupUinsFrom: (Array.isArray(fileCfg.groupUinsFrom) ? fileCfg.groupUinsFrom : []).map(String),
     limits,
     maxCommentChars: Number(fileCfg.maxCommentChars ?? 120),

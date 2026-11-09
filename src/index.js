@@ -86,6 +86,7 @@ async function seedGroupUins({ attempts = 3 } = {}) {
 async function ensureAllowed(uin) {
   const key = String(uin ?? '');
   if (!/^\d{5,12}$/.test(key)) return `target_uin 不是合法 QQ 号：${key}`;
+  if (selfUin && key === selfUin) return null;   // 自己永远允许
   if (!cfg.allowUins.has(key) && !groupSeeded) await seedGroupUins({ attempts: 1 });
   if (!cfg.allowUins.has(key)) {
     return `拒绝：${key} 不在白名单内（当前允许：${[...cfg.allowUins].join(', ') || '空'}）。`
@@ -200,6 +201,9 @@ function text(payload, isError = false) {
   };
 }
 
+// 她自己的 QQ 号：启动后若配置没给，自动从 OneBot 取
+let selfUin = String(cfg.selfUin || '');
+
 const server = new McpServer({ name: 'qzone-safe', version: '0.1.0' });
 
 server.tool(
@@ -232,7 +236,11 @@ server.tool(
   async ({ tid, target_uin, pos, num }) => {
     try {
       const params = { tid, pos: pos ?? 0, num: num ?? 20 };
-      if (target_uin) params.target_uin = Number(target_uin);
+      const owner = target_uin || selfUin;
+      if (owner) params.target_uin = Number(owner);
+      if (!owner) {
+        return text('需要 target_uin：说说主人的 QQ 号。看自己的说说可以不传（但本服务还没拿到你的号）。', true);
+      }
       const body = await callOneBot('get_qzone_msg_detail', params);
       audit({ tool: 'comments', tid, ok: body?.status === 'ok' });
       if (body?.status !== 'ok') return text({ failed: true, retcode: body?.retcode, wording: body?.wording }, true);
@@ -398,6 +406,18 @@ server.tool(
 );
 
 await seedGroupUins();
+
+// 自己是谁：配置没给就问 OneBot；拿不到不影响其它工具
+if (!selfUin) {
+  try {
+    const body = await callOneBot('get_login_info');
+    const uid = String(body?.data?.user_id ?? body?.user_id ?? '');
+    if (/^\d{5,12}$/.test(uid)) {
+      selfUin = uid;
+      console.error(`[qzone-safe] 自己的号（自动识别）= ${selfUin}`);
+    }
+  } catch { /* 忽略：只是少一个便利 */ }
+}
 
 // 自检用：QZONE_PATROL_ON_START=1 时启动即跑一轮巡视（只读），方便验证真实环境
 if (String(process.env.QZONE_PATROL_ON_START || '') === '1') {
