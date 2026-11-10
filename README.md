@@ -181,7 +181,7 @@ QQ 空间的回复是**二级评论**，`get_qzone_msg_detail` 只把一级评�
 |---|---|---|
 | 操作系统 | Linux / Windows / macOS | 代码无平台依赖；Linux 实测 |
 | Node.js | `>= 20` | 20 / 22 / 24；CI 覆盖 20、22 |
-| OneBot 网关 | SnowLuma / NapCat | SnowLuma ✅ 实测 + fixture；NapCat 🟡 同名 action 已核对，待实机录制 |
+| OneBot 网关 | SnowLuma / NapCat | **两家都 ✅ 实测**（各 7/7，fixture 已录） |
 
 ### 支持哪些网关
 
@@ -196,7 +196,7 @@ QQ 空间的接口**不在 OneBot v11 标准里**。本插件用到 7 个 action
 | 网关 | 能用吗 | 说明 |
 |---|---|---|
 | **SnowLuma** | ✅ 实测 | 本插件最初适配的网关 |
-| **NapCat** | 🟡 待实测 | 源码里已实现**同名 action**（`qzone/` 目录），且带 SnowLuma 兼容格式；待实机录制 fixture |
+| **NapCat** | ✅ 实测（2026-11-10） | 同名 action，**零代码改动**直接 7/7 |
 | Lagrange / go-cqhttp | ❌ 不行 | 没有 QQ 空间 action |
 | 其它 SnowLuma 分支 | 🟡 看是否保留同名 action |  |
 
@@ -208,7 +208,7 @@ QQ 空间的接口**不在 OneBot v11 标准里**。本插件用到 7 个 action
 
 | 层 | 命令 | 覆盖 | 结果 |
 |---|---|---|---|
-| 单元 | `npm test` | 限频/去重/文本校验/说说解析 | **12/12** |
+| 单元 | `npm test` | 限频/去重/文本校验/说说解析 + **双后端 fixture 回归** | **20/20** |
 | MCP 协议（真实 OneBot） | `npm run selftest:mcp` | 列工具、读说说、读评论、白名单拦截、publish 关闭、好友名册 | **7/7** |
 
 协议层测试**只调用读接口**，不会在真实账号上点赞/评论/发说说。

@@ -1,0 +1,77 @@
+{
+  "backend": "napcat",
+  "recordedAt": "2026-11-10",
+  "note": "录制自真实网关；文本/QQ号/tid/URL 已脱敏，只保留结构。",
+  "actions": {
+    "get_login_info": {
+      "status": "ok",
+      "retcode": 0,
+      "data": {
+        "user_id": 10001,
+        "nickname": "（示例文本）"
+      },
+      "message": "（示例文本）",
+      "wording": "（示例文本）",
+      "echo": "ng6en9d4hsa",
+      "stream": "normal-action"
+    },
+    "get_qzone_msg_list": {
+      "status": "ok",
+      "retcode": 0,
+      "data": {
+        "total": 119,
+        "total_known": true,
+        "msglist": [
+          {
+            "tid": "TID0001",
+            "content": "（示例文本）",
+            "time": 10002,
+            "comment_num": 1,
+            "is_private": false,
+            "images": [
+              "https://example.invalid/resource",
+              "https://example.invalid/resource"
+            ]
+          }
+        ]
+      },
+      "message": "（示例文本）",
+      "wording": "（示例文本）",
+      "echo": "hu1r32xqa35",
+      "stream": "normal-action"
+    },
+    "get_qzone_msg_detail": {
+      "status": "ok",
+      "retcode": 0,
+      "data": {
+        "tid": "TID0001",
+        "content": "（示例文本）",
+        "comment_num": 1,
+        "comments": [
+          {
+            "comment_id": "1",
+            "uin": 10003,
+            "name": "（示例文本）",
+            "time": 10004,
+            "content": "（示例文本）",
+            "replies": [
+              {
+                "comment_id": "1",
+                "uin": 10001,
+                "name": "（示例文本）",
+                "time": 10005,
+                "content": "（示例文本）",
+                "parent_comment_id": "1",
+                "parent_comment_uin": 10003
+              }
+            ]
+          }
+        ]
+      },
+      "message": "（示例文本）",
+      "wording": "（示例文本）",
+      "echo": "hvkmlhd8up",
+      "stream": "normal-action"
+    }
+  }
+}
