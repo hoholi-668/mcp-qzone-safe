@@ -73,5 +73,11 @@
       "echo": "hvkmlhd8up",
       "stream": "normal-action"
     }
+  },
+  "backendInfo": {
+    "app_name": "NapCat",
+    "app_version": "unknown",
+    "source": "image-label",
+    "note": "镜像 org.opencontainers.image.version=base，构建于 2026-10-30；下一次录制时用 get_version_info 补齐"
   }
 }

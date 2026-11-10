@@ -33,6 +33,11 @@ for (const file of files) {
   const name = fixture.backend || path.basename(file, '.json');
   const actions = fixture.actions || {};
 
+  test(`${name}：backendInfo 有应用名（记录实测版本）`, () => {
+    const info = fixture.backendInfo || {};
+    assert.ok(String(info.app_name || '').length > 0, 'backendInfo.app_name 缺失');
+  });
+
   test(`${name}：get_login_info 有 user_id`, () => {
     const data = actions.get_login_info?.data || {};
     const uid = data.user_id ?? data.uin;

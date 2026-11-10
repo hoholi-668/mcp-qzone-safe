@@ -1,5 +1,11 @@
 {
   "backend": "snowluma",
+  "backendInfo": {
+    "app_name": "SnowLuma",
+    "app_version": "2.2.0-node",
+    "protocol_version": "v11",
+    "source": "get_version_info"
+  },
   "recordedAt": "2026-11-10",
   "note": "录制自真实网关；文本/QQ号/tid/URL 已脱敏，只保留结构。",
   "actions": {

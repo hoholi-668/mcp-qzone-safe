@@ -95,6 +95,21 @@ function makeRedactor() {
 (async () => {
   const actions = {};
 
+  // 先问版本：让 fixture 能写清「实测于哪个网关版本」
+  let backendInfo = null;
+  try {
+    const ver = await call('get_version_info', {});
+    if (ver?.status === 'ok' && ver.data) {
+      backendInfo = {
+        app_name: String(ver.data.app_name ?? ''),
+        app_version: String(ver.data.app_version ?? ''),
+        protocol_version: String(ver.data.protocol_version ?? ''),
+        source: 'get_version_info'
+      };
+    }
+  } catch { /* 不支持的网关就留空 */ }
+  if (!backendInfo) backendInfo = { app_name: backend, app_version: 'unknown', source: 'unavailable' };
+
   actions.get_login_info = await call('get_login_info', {});
   console.log('  get_login_info:', actions.get_login_info?.status, '| app:', actions.get_login_info?.data?.app_name || '(无)');
 
@@ -117,6 +132,7 @@ function makeRedactor() {
   const redact = makeRedactor();
   const fixture = {
     backend,
+    backendInfo,
     recordedAt: new Date().toISOString().slice(0, 10),
     note: '录制自真实网关；文本/QQ号/tid/URL 已脱敏，只保留结构。',
     actions: redact(actions)

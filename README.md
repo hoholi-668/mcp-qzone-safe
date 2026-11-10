@@ -228,7 +228,7 @@ QQ 空间的接口**不在 OneBot v11 标准里**。本插件用到 7 个 action
 两家网关的 action 名一致，但返回字段的写法可能有细微差别。为了不让「换网关」变成运气问题，
 这里把**真实响应录下来**，在 CI 里对两套 fixture 跑同一组解析断言：
 
-`ash
+```bash
 # 1. 录一份（只读，不改任何数据）
 node scripts/record-backend.mjs \
   --backend snowluma \
@@ -237,12 +237,20 @@ node scripts/record-backend.mjs \
 
 # 2. 跑回归（不需要网关）
 node --test
-`
+```
 
 **录制时会自动脱敏**：说说正文、QQ 号、tid、图片地址全部替换成占位值，只保留结构。
 所以 fixture 可以安全地进公开仓库。
 
-新增一个后端只需要多录一份 	est/backends/<名字>.json，测试会自动为它生成断言。
+新增一个后端只需要多录一份 `test/backends/<名字>.json`，测试会自动为它生成断言
+（fixture 里的 `backendInfo` 会记录实测的网关名称与版本）。
+
+**实测版本**：SnowLuma `2.2.0-node`（Protocol v11）、NapCat（镜像 `base`，构建于 2026-10-30）。
+
+**实测结论（2026-11-10）**：SnowLuma 与 NapCat 的响应字段**前者是后者的子集**——
+NapCat 只多了 OneBot 标准外层的 `echo` / `message` / `stream` / `wording`，以及 `data.total_known`；
+我们解析用的字段（`msglist` / `comments` / `comment_id` / `tid`）两边完全一致。
+所以插件指向 NapCat **不需要改任何代码**，只改 `QZONE_ONEBOT_URL` 和 token。
 
 ## 踩坑记录
 
