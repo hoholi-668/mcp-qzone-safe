@@ -23,7 +23,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 import { loadConfig } from './config.js';
 import { pruneState, checkRate, recordRate } from './guard.js';
-import { summarizePosts, summarizeComments, validateText } from './format.js';
+import { summarizePosts, summarizeComments, validateText, pickCommentId, pickPublishTid } from './format.js';
 import { pickPatrolTargets, pickNewPosts, mergeSeen, formatPatrolDigest } from './patrol.js';
 
 const cfg = loadConfig();
@@ -314,7 +314,7 @@ server.tool(
       audit({ tool: 'comment', target_uin, tid, chars: [...body].length, ok: res?.status === 'ok', retcode: res?.retcode });
       if (res?.status !== 'ok') return text({ failed: true, retcode: res?.retcode, wording: res?.wording }, true);
       record('comment', String(tid));
-      const newId = String(res?.data?.comment_id || res?.data?.commentid || '');
+      const newId = pickCommentId(res);
       if (target_uin) noteMyComment(target_uin, tid, newId);
       markReplied(tid, comment_uin, newId);
       return text({ ok: true, action: 'comment', tid, content: body });
@@ -400,7 +400,7 @@ server.tool(
       record('publish');
       // 宿主（如 qq-bridge）靠这个文件判断「今天发过没有」，别漏写
       if (bridgeState) {
-        writeJson(bridgeState.lastPublish, { tid: String(res?.data?.tid || res?.data?.msgid || ''), at: Date.now() });
+        writeJson(bridgeState.lastPublish, { tid: pickPublishTid(res), at: Date.now() });
       }
       // 发完说说顺便逛逛朋友空间（只读；要不要互动由她自己决定）
       const digest = cfg.patrol?.onPublish ? await runPatrol().catch(() => '') : '';

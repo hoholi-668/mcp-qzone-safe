@@ -35,7 +35,7 @@ npm install
 node src/index.js          # 出现 ready 就说明能启动
 ```
 
-前置条件：一个 **SnowLuma 系** OneBot 网关在跑（原因见下方「兼容范围」）。
+前置条件：一个实现了 QQ 空间扩展 action 的 OneBot 网关——**SnowLuma** 或 **NapCat**（见下方「兼容范围」）。
 
 配置（默认 `~/.config/qzone-safe/config.json`，可用 `QZONE_CONFIG` 覆盖）：
 
@@ -181,9 +181,9 @@ QQ 空间的回复是**二级评论**，`get_qzone_msg_detail` 只把一级评�
 |---|---|---|
 | 操作系统 | Linux / Windows / macOS | 代码无平台依赖；Linux 实测 |
 | Node.js | `>= 20` | 20 / 22 / 24；CI 覆盖 20、22 |
-| OneBot 网关 | **必须是 SnowLuma 系** | ✅ 实测 |
+| OneBot 网关 | SnowLuma / NapCat | SnowLuma ✅ 实测 + fixture；NapCat 🟡 同名 action 已核对，待实机录制 |
 
-### 为什么只支持 SnowLuma
+### 支持哪些网关
 
 QQ 空间的接口**不在 OneBot v11 标准里**。本插件用到 7 个 action：
 
@@ -193,11 +193,12 @@ QQ 空间的接口**不在 OneBot v11 标准里**。本插件用到 7 个 action
 | `get_qzone_msg_list` / `get_qzone_msg_detail` | ❌ 非标准 |
 | `like_qzone` / `comment_qzone` / `send_qzone_msg` | ❌ 非标准 |
 
-| 网关 | 能用吗 |
-|---|---|
-| SnowLuma | ✅ 实测 |
-| NapCat / Lagrange / go-cqhttp | ❌ 大概率不行（没有空间 action） |
-| 其它 SnowLuma 分支 | 🟡 看是否保留同名 action |
+| 网关 | 能用吗 | 说明 |
+|---|---|---|
+| **SnowLuma** | ✅ 实测 | 本插件最初适配的网关 |
+| **NapCat** | 🟡 待实测 | 源码里已实现**同名 action**（`qzone/` 目录），且带 SnowLuma 兼容格式；待实机录制 fixture |
+| Lagrange / go-cqhttp | ❌ 不行 | 没有 QQ 空间 action |
+| 其它 SnowLuma 分支 | 🟡 看是否保留同名 action |  |
 
 **AI 客户端**：DSH 实测；其它 MCP 客户端推断可用（只返回文本）。
 
@@ -221,6 +222,27 @@ QQ 空间的接口**不在 OneBot v11 标准里**。本插件用到 7 个 action
 | 发说说 | ✅ | 发布后 `qzone-last-publish.json` 更新，空间可见 |
 
 ---
+
+## 双后端回归（SnowLuma / NapCat）
+
+两家网关的 action 名一致，但返回字段的写法可能有细微差别。为了不让「换网关」变成运气问题，
+这里把**真实响应录下来**，在 CI 里对两套 fixture 跑同一组解析断言：
+
+`ash
+# 1. 录一份（只读，不改任何数据）
+node scripts/record-backend.mjs \
+  --backend snowluma \
+  --url http://127.0.0.1:3000 --token <token> \
+  --uin <你的号> --out test/backends/snowluma.json
+
+# 2. 跑回归（不需要网关）
+node --test
+`
+
+**录制时会自动脱敏**：说说正文、QQ 号、tid、图片地址全部替换成占位值，只保留结构。
+所以 fixture 可以安全地进公开仓库。
+
+新增一个后端只需要多录一份 	est/backends/<名字>.json，测试会自动为它生成断言。
 
 ## 踩坑记录
 

@@ -54,3 +54,25 @@ export function validateText(body, maxChars, { allowEmpty = false } = {}) {
   return null;
 }
 
+
+
+/**
+ * 从 comment_qzone 的返回里取新评论 id。
+ * 不同网关字段名不同：SnowLuma 用 comment_id，部分实现用 commentId / commentid，
+ * 还有的把结果塞进 data.comment.comment_id。
+ */
+export function pickCommentId(body) {
+  const d = body?.data ?? {};
+  const v = d.comment_id ?? d.commentId ?? d.commentid ?? d.comment?.comment_id ?? '';
+  return String(v);
+}
+
+/**
+ * 从 send_qzone_msg 的返回里取说说 id。
+ * NapCat 返回 { tid, time }；SnowLuma 可能用 msgid 等别名。
+ */
+export function pickPublishTid(body) {
+  const d = body?.data ?? {};
+  const v = d.tid ?? d.tid_str ?? d.msgid ?? d.msg_id ?? '';
+  return String(v);
+}

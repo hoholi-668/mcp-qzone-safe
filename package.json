@@ -20,7 +20,8 @@
   "scripts": {
     "start": "node src/index.js",
     "test": "node --test",
-    "selftest:mcp": "node scripts/selftest-mcp.mjs"
+    "selftest:mcp": "node scripts/selftest-mcp.mjs",
+    "record:backend": "node scripts/record-backend.mjs"
   },
   "keywords": [
     "mcp",
