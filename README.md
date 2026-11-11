@@ -1,22 +1,71 @@
 # mcp-qzone-safe
 
+<p>
+  <a href="https://github.com/hoholi-668/mcp-qzone-safe/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/hoholi-668/mcp-qzone-safe/test.yml?branch=main&label=CI&style=flat-square"></a>
+  <img alt="node" src="https://img.shields.io/badge/node-%3E%3D20-4b6fff?style=flat-square">
+  <img alt="license" src="https://img.shields.io/badge/license-MIT-263146?style=flat-square">
+</p>
+
+**English** · [中文文档](#中文文档)
+
+> **A safety-gated MCP server for QQ Zone (QQ空间).** Read posts, like, comment (including nested
+> replies), and publish — every action goes through permission, rate-limit, dedupe and audit gates.
+>
+> ⚠️ **Maintenance status:** the gateway ecosystem is shrinking — SnowLuma's repo went private and
+> NapCat announced its end (last release 2026-10-30). **Existing deployments keep working**; check
+> that you own a OneBot gateway implementing the QZone actions before a new deployment.
+
+**Use this if you** want an AI to interact with QQ Zone without letting it spam, mis-@ people, or
+read private posts — or if you are building an agent that needs a **default-deny** action whitelist.
+
+**Works with:** any MCP client (DSH, Claude Desktop, Cursor, Cline) **plus** an OneBot v11 gateway
+that implements these actions (`get_qzone_msg_list`, `get_qzone_msg_detail`, `like_qzone`,
+`comment_qzone`, `send_qzone_msg`, …).
+
+## Tools
+
+| Tool | What it does |
+|---|---|
+| `qzone_see_posts` | List recent posts (self or allowlisted users) |
+| `qzone_comments` | Read comments and nested replies |
+| `qzone_like` | Like a post (deduped, rate-limited) |
+| `qzone_comment` | Comment or reply (CQ-code rejected, length-checked) |
+| `qzone_publish` | Publish a post (**disabled by default**) |
+| `friend_list` / `friend_note` | Local allowlist management with notes |
+
+## Configuration
+
+| Env var | Meaning |
+|---|---|
+| `QZONE_ONEBOT_URL` | Gateway HTTP endpoint (e.g. `http://127.0.0.1:3000`) |
+| `QZONE_ONEBOT_TOKEN` | Gateway access token |
+| `QZONE_CONFIG` | Path to `qzone-mcp.json` (allowlist, publish toggle, limits) |
+| `QZONE_STATE_DIR` | Where dedupe/rate-limit state is stored |
+
+## Verified
+
+- 20 unit tests, including **two recorded gateway fixtures** (SnowLuma 2.2.0-node and NapCat) — CI
+  replays both, so a parser regression on either backend fails the build.
+- Live protocol self-test: **7/7** against both backends, with **zero code changes** when switching.
+
+## Known limits
+
+- QZone actions are **not** part of OneBot v11 — a plain gateway won't work without them.
+- Publishing is off by default on purpose; enable it explicitly.
+
+## License
+
+MIT
+
+---
+
+# 中文文档
+
 > ⚠️ **维护状态：功能可用，但依赖的网关生态正在萎缩。**
 > SnowLuma 仓库已私有化、NapCat 已宣布终止（2026-10-30 最后一个 release）。
 > **存量环境可以继续用**；新部署前请先确认你有一个实现了 QQ 空间 action 的 OneBot 网关。
 
-> 把 **QQ 空间**接给大模型：看说说、点赞、评论（含楼中楼）、发说说——**每一件都过闸门**。
-> 设计前提是「先保证不闯祸，再谈能做什么」。
-
-[![CI](https://img.shields.io/github/actions/workflow/status/hoholi-668/mcp-qzone-safe/test.yml?branch=main&label=CI)](https://github.com/hoholi-668/mcp-qzone-safe/actions)
-[![node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
-[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-
-QQ 空间没有给 AI 用的接口。直接把网关暴露给模型太危险：乱评论、刷屏、@ 错人、把私人说说翻出来。
-这个 MCP 服务把「能做什么」和「不许做什么」写死在代码里，模型只能在前者范围内活动。
-
----
-
-## 这套插件
+### 这套插件
 
 | 插件 | 作用 | 依赖 |
 |---|---|---|
@@ -28,7 +77,7 @@ QQ 空间没有给 AI 用的接口。直接把网关暴露给模型太危险：�
 
 > 除 qzone 外，其余插件都不依赖任何 IM 网关——任何 MCP 客户端（DSH / Claude / Cursor）都能直接接。
 
-## 它解决什么问题
+### 它解决什么问题
 
 | 风险 | 这里的处理 |
 |---|---|
@@ -41,7 +90,7 @@ QQ 空间没有给 AI 用的接口。直接把网关暴露给模型太危险：�
 
 ---
 
-## 30 秒上手
+### 30 秒上手
 
 ```bash
 # 本项目未发布 npm
@@ -98,7 +147,7 @@ node src/index.js          # 出现 ready 就说明能启动
 
 ---
 
-## 七个工具
+### 七个工具
 
 | 工具 | 作用 | 写操作 |
 |---|---|---|
@@ -112,9 +161,9 @@ node src/index.js          # 出现 ready 就说明能启动
 
 ---
 
-## 核心机制
+### 核心机制
 
-### 1. 五道闸门
+#### 1. 五道闸门
 
 | 闸门 | 默认值 | 说明 |
 |---|---|---|
@@ -126,7 +175,7 @@ node src/index.js          # 出现 ready 就说明能启动
 
 **自己永远放行**：不传 `target_uin` 时按「看自己的空间」处理，不需要把自己的号塞进白名单。
 
-### 2. 楼中楼：`comment_id` 不能传 `"0"`
+#### 2. 楼中楼：`comment_id` 不能传 `"0"`
 
 QQ 空间的回复是**二级评论**，`get_qzone_msg_detail` 只把一级评论列在 `comments` 里，回复藏在每条的 `replies` 下
 ——只看 `comment_num` 会以为「没回」。
@@ -149,7 +198,7 @@ QQ 空间的回复是**二级评论**，`get_qzone_msg_detail` 只把一级评�
 
 `comment_id` 传错是最常见的失败原因（`-10049`）。
 
-### 3. 好友名册（她写给每个人）
+#### 3. 好友名册（她写给每个人）
 
 `friend_note` 传哪项就更新哪项：
 
@@ -161,7 +210,7 @@ QQ 空间的回复是**二级评论**，`get_qzone_msg_detail` 只把一级评�
 | `tone` | 该怎么跟他说话（语气、分寸） |
 | `note` | 备注，追加不覆盖 |
 
-### 4. 与宿主联动（可选）
+#### 4. 与宿主联动（可选）
 
 设置 `QZONE_BRIDGE_STATE_DIR` 后同步这些文件：
 
@@ -176,7 +225,7 @@ QQ 空间的回复是**二级评论**，`get_qzone_msg_detail` 只把一级评�
 
 ---
 
-## 配置项
+### 配置项
 
 | 变量 | 说明 |
 |---|---|
@@ -191,7 +240,7 @@ QQ 空间的回复是**二级评论**，`get_qzone_msg_detail` 只把一级评�
 
 ---
 
-## 兼容范围
+### 兼容范围
 
 | 项 | 要求 | 实测 |
 |---|---|---|
@@ -199,7 +248,7 @@ QQ 空间的回复是**二级评论**，`get_qzone_msg_detail` 只把一级评�
 | Node.js | `>= 20` | 20 / 22 / 24；CI 覆盖 20、22 |
 | OneBot 网关 | SnowLuma / NapCat | **两家都 ✅ 实测**（各 7/7），但**均已停更**——存量可用，新部署需自备网关 |
 
-### 支持哪些网关
+#### 支持哪些网关
 
 QQ 空间的接口**不在 OneBot v11 标准里**。本插件用到 7 个 action：
 
@@ -220,7 +269,7 @@ QQ 空间的接口**不在 OneBot v11 标准里**。本插件用到 7 个 action
 
 ---
 
-## 实测数据
+### 实测数据
 
 | 层 | 命令 | 覆盖 | 结果 |
 |---|---|---|---|
@@ -239,7 +288,7 @@ QQ 空间的接口**不在 OneBot v11 标准里**。本插件用到 7 个 action
 
 ---
 
-## 双后端回归（SnowLuma / NapCat）
+### 双后端回归（SnowLuma / NapCat）
 
 两家网关的 action 名一致，但返回字段的写法可能有细微差别。为了不让「换网关」变成运气问题，
 这里把**真实响应录下来**，在 CI 里对两套 fixture 跑同一组解析断言：
@@ -268,7 +317,7 @@ NapCat 只多了 OneBot 标准外层的 `echo` / `message` / `stream` / `wording
 我们解析用的字段（`msglist` / `comments` / `comment_id` / `tid`）两边完全一致。
 所以插件指向 NapCat **不需要改任何代码**，只改 `QZONE_ONEBOT_URL` 和 token。
 
-## 踩坑记录
+### 踩坑记录
 
 | 现象 | 根因 | 修法 |
 |---|---|---|
@@ -282,7 +331,7 @@ NapCat 只多了 OneBot 标准外层的 `echo` / `message` / `stream` / `wording
 
 ---
 
-## 自测与开发
+### 自测与开发
 
 ```bash
 node --test                                     # 单测 12 项
@@ -302,6 +351,12 @@ test/           node:test
 
 ---
 
-## 许可
+### 许可
 
 MIT © 2026 HOHOLI
+
+---
+
+## 检索关键词（给搜索引擎）
+
+QQ空间 MCP · OneBot v11 · QZone API · 说说/评论/点赞 · 默认拒绝 · SnowLuma · NapCat
