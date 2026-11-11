@@ -1,4 +1,5 @@
 # mcp-qzone-safe
+[![npm](https://img.shields.io/npm/v/mcp-qzone-safe.svg)](https://www.npmjs.com/package/mcp-qzone-safe)
 
 <p>
   <a href="https://github.com/hoholi-668/mcp-qzone-safe/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/hoholi-668/mcp-qzone-safe/test.yml?branch=main&label=CI&style=flat-square"></a>
