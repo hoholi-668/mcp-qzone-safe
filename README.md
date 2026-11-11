@@ -53,6 +53,23 @@ that implements these actions (`get_qzone_msg_list`, `get_qzone_msg_detail`, `li
 - QZone actions are **not** part of OneBot v11 — a plain gateway won't work without them.
 - Publishing is off by default on purpose; enable it explicitly.
 
+## FAQ
+
+**Which gateway do I need?**
+One that implements the QZone actions (`get_qzone_msg_list`, `like_qzone`, …). The SnowLuma / NapCat lineage does; both are unmaintained now, so existing deployments are the realistic audience.
+
+**Will it spam or comment on the wrong post?**
+Every write goes through five gates: allowlist, rate limit, dedupe, text validation (rejects CQ codes / over-length), and audit.
+
+**Why is publishing disabled by default?**
+Publishing is the highest-impact action. Enabling it is an explicit decision, not a default.
+
+**Nested replies?**
+Pass the first-level comment id as `comment_id`; a literal `"0"` fails with `-10049`.
+
+**Do I have to change code to switch backends?**
+No. Point `QZONE_ONEBOT_URL` / token at the other gateway; both recorded fixtures are replayed in CI.
+
 ## License
 
 MIT
@@ -356,6 +373,23 @@ test/           node:test
 MIT © 2026 HOHOLI
 
 ---
+
+### FAQ
+
+**需要什么网关？**
+实现了空间 action 的 OneBot（`get_qzone_msg_list`、`like_qzone` 等）。SnowLuma / NapCat 系有，但**都已停更**——现实用户是存量部署。
+
+**会不会乱评论、评错人？**
+每个写操作过五道闸门：白名单、限频、去重、文本校验（拒 CQ 码/超长）、审计。
+
+**为什么发说说默认关闭？**
+影响最大的动作，必须显式开启，不做默认。
+
+**楼中楼怎么回？**
+`comment_id` 传一级评论 id；传 `"0"` 会报 `-10049`。
+
+**换后端要改代码吗？**
+不用。改 `QZONE_ONEBOT_URL` 和 token 即可；两套 fixture 都在 CI 里回放。
 
 ## 检索关键词（给搜索引擎）
 
