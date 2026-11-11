@@ -1,5 +1,9 @@
 # mcp-qzone-safe
 
+> ⚠️ **维护状态：功能可用，但依赖的网关生态正在萎缩。**
+> SnowLuma 仓库已私有化、NapCat 已宣布终止（2026-10-30 最后一个 release）。
+> **存量环境可以继续用**；新部署前请先确认你有一个实现了 QQ 空间 action 的 OneBot 网关。
+
 > 把 **QQ 空间**接给大模型：看说说、点赞、评论（含楼中楼）、发说说——**每一件都过闸门**。
 > 设计前提是「先保证不闯祸，再谈能做什么」。
 
@@ -11,6 +15,18 @@ QQ 空间没有给 AI 用的接口。直接把网关暴露给模型太危险：�
 这个 MCP 服务把「能做什么」和「不许做什么」写死在代码里，模型只能在前者范围内活动。
 
 ---
+
+## 这套插件
+
+| 插件 | 作用 | 依赖 |
+|---|---|---|
+| [mcp-video-learn](https://github.com/hoholi-668/mcp-video-learn) | 视频 / 动图 → 九宫格 + 字幕 | ffmpeg |
+| [mcp-roster](https://github.com/hoholi-668/mcp-roster) | 人物名册与权限（默认拒绝） | 无 |
+| [conversation-pacing](https://github.com/hoholi-668/conversation-pacing) | 群聊发言节奏：什么时候说、说给谁 | 无 |
+| [dsh-qq-persona](https://github.com/hoholi-668/dsh-qq-persona) | 「不像客服」的人格模板 | 无 |
+| [mcp-qzone-safe](https://github.com/hoholi-668/mcp-qzone-safe) | QQ 空间操作（**需要 OneBot 网关，存量环境**） | OneBot 网关 |
+
+> 除 qzone 外，其余插件都不依赖任何 IM 网关——任何 MCP 客户端（DSH / Claude / Cursor）都能直接接。
 
 ## 它解决什么问题
 
@@ -181,7 +197,7 @@ QQ 空间的回复是**二级评论**，`get_qzone_msg_detail` 只把一级评�
 |---|---|---|
 | 操作系统 | Linux / Windows / macOS | 代码无平台依赖；Linux 实测 |
 | Node.js | `>= 20` | 20 / 22 / 24；CI 覆盖 20、22 |
-| OneBot 网关 | SnowLuma / NapCat | **两家都 ✅ 实测**（各 7/7，fixture 已录） |
+| OneBot 网关 | SnowLuma / NapCat | **两家都 ✅ 实测**（各 7/7），但**均已停更**——存量可用，新部署需自备网关 |
 
 ### 支持哪些网关
 
